@@ -14,6 +14,7 @@ import google.oauth2.credentials
 
 # -------------------- Configuration Module --------------------
 
+
 @dataclass
 class LoadError(Exception):
     """Raise an exception where data loading fails"""
@@ -24,6 +25,7 @@ class LoadError(Exception):
 
     def __str__(self):
         return f"Failed to load from {self.source}: {self.message}"
+
 
 def load_json(file_path):
     """
@@ -49,7 +51,9 @@ def load_json(file_path):
             source=file_path, message="Invalid JSON format", original_error=e
         ) from e
 
+
 # -------------------- Authentication Module --------------------
+
 
 def get_spotify_client(config):
     """
@@ -64,7 +68,7 @@ def get_spotify_client(config):
     Raises:
         LoadError: If authentication tokens are missing or invalid.
     """
-    if 'spotify_token' not in session:
+    if "spotify_token" not in session:
         raise LoadError(source="spotify_auth", message="Spotify not authenticated")
 
     try:
@@ -74,14 +78,14 @@ def get_spotify_client(config):
             redirect_uri=config["SPOTIFY_REDIRECT_URI"],
             scope=config.get("SPOTIFY_SCOPE", "playlist-read-private"),
             cache_handler=None,  # We are managing tokens manually
-            show_dialog=True
+            show_dialog=True,
         )
 
-        token_info = sp_oauth.validate_token(session['spotify_token'])
+        token_info = sp_oauth.validate_token(session["spotify_token"])
         if not token_info:
             raise LoadError(source="spotify_auth", message="Invalid Spotify token")
 
-        sp = spotipy.Spotify(auth=session['spotify_token'])
+        sp = spotipy.Spotify(auth=session["spotify_token"])
         return sp
     except Exception as e:
         raise LoadError(
@@ -89,6 +93,7 @@ def get_spotify_client(config):
             message="Failed to get Spotify client",
             original_error=e,
         ) from e
+
 
 def get_youtube_client(config):
     """
@@ -103,17 +108,17 @@ def get_youtube_client(config):
     Raises:
         LoadError: If authentication tokens are missing or invalid.
     """
-    if 'youtube_credentials' not in session:
+    if "youtube_credentials" not in session:
         raise LoadError(source="youtube_auth", message="YouTube not authenticated")
 
     credentials = google.oauth2.credentials.Credentials(
-        **session['youtube_credentials']
+        **session["youtube_credentials"]
     )
 
     if credentials and credentials.expired and credentials.refresh_token:
         try:
             credentials.refresh(Request())
-            session['youtube_credentials'] = credentials_to_dict(credentials)
+            session["youtube_credentials"] = credentials_to_dict(credentials)
         except Exception as e:
             raise LoadError(
                 source="youtube_auth",
@@ -131,6 +136,7 @@ def get_youtube_client(config):
             original_error=e,
         ) from e
 
+
 def credentials_to_dict(credentials):
     """
     Convert Credentials object to dict for storing in session.
@@ -142,15 +148,17 @@ def credentials_to_dict(credentials):
         dict: Dictionary representation of credentials.
     """
     return {
-        'token': credentials.token,
-        'refresh_token': credentials.refresh_token,
-        'token_uri': credentials.token_uri,
-        'client_id': credentials.client_id,
-        'client_secret': credentials.client_secret,
-        'scopes': credentials.scopes
+        "token": credentials.token,
+        "refresh_token": credentials.refresh_token,
+        "token_uri": credentials.token_uri,
+        "client_id": credentials.client_id,
+        "client_secret": credentials.client_secret,
+        "scopes": credentials.scopes,
     }
 
+
 # -------------------- Spotify Module --------------------
+
 
 def get_spotify_playlist_tracks(sp, playlist_id):
     """
@@ -187,7 +195,9 @@ def get_spotify_playlist_tracks(sp, playlist_id):
             original_error=e,
         ) from e
 
+
 # -------------------- YouTube Module --------------------
+
 
 def search_youtube_instrumental(youtube, track_name, artist_name):
     """
@@ -233,6 +243,7 @@ def search_youtube_instrumental(youtube, track_name, artist_name):
 
     return None  # No matching instrumental/karaoke version found
 
+
 def create_youtube_playlist(youtube, title, description=""):
     """
     Create a new YouTube playlist.
@@ -264,6 +275,7 @@ def create_youtube_playlist(youtube, title, description=""):
             message="Failed to create the YouTube playlist",
             original_error=e,
         ) from e
+
 
 def add_video_to_playlist(youtube, playlist_id, video_id):
     """
@@ -298,6 +310,7 @@ def add_video_to_playlist(youtube, playlist_id, video_id):
             original_error=e,
         ) from e
 
+
 # -------------------- Flask App Setup --------------------
 
 app = Flask(__name__)
@@ -312,7 +325,9 @@ except LoadError as e:
     sys.exit(1)
 
 # Secret key for session management
-app.secret_key = os.getenv('FLASK_SECRET_KEY') or config.get("SECRET_KEY") or "supersecretkey"
+app.secret_key = (
+    os.getenv("FLASK_SECRET_KEY") or config.get("SECRET_KEY") or "supersecretkey"
+)
 
 # Configure server-side session
 app.config["SESSION_TYPE"] = "filesystem"
@@ -324,7 +339,8 @@ CORS(app, supports_credentials=True, origins=["http://localhost:3000"])
 
 # -------------------- Routes --------------------
 
-@app.route('/auth/spotify')
+
+@app.route("/auth/spotify")
 def auth_spotify():
     """
     Initiate Spotify OAuth flow.
@@ -335,12 +351,13 @@ def auth_spotify():
         redirect_uri=config["SPOTIFY_REDIRECT_URI"],
         scope=config.get("SPOTIFY_SCOPE", "playlist-read-private"),
         cache_handler=None,  # We are managing tokens manually
-        show_dialog=True
+        show_dialog=True,
     )
     auth_url = sp_oauth.get_authorize_url()
     return redirect(auth_url)
 
-@app.route('/auth/spotify/callback')
+
+@app.route("/auth/spotify/callback")
 def callback_spotify():
     """
     Handle Spotify OAuth callback.
@@ -351,26 +368,41 @@ def callback_spotify():
         redirect_uri=config["SPOTIFY_REDIRECT_URI"],
         scope=config.get("SPOTIFY_SCOPE", "playlist-read-private"),
         cache_handler=None,
-        show_dialog=True
+        show_dialog=True,
     )
 
-    code = request.args.get('code')
-    error = request.args.get('error')
+    code = request.args.get("code")
+    error = request.args.get("error")
 
     if error:
-        return jsonify({"status": "error", "message": f"Spotify OAuth error: {error}"}), 400
+        return (
+            jsonify({"status": "error", "message": f"Spotify OAuth error: {error}"}),
+            400,
+        )
 
     if code:
         try:
             token_info = sp_oauth.get_access_token(code, check_cache=False)
-            session['spotify_token'] = token_info['access_token']
-            return jsonify({"status": "success", "message": "Spotify authenticated successfully"})
+            session["spotify_token"] = token_info["access_token"]
+            return jsonify(
+                {"status": "success", "message": "Spotify authenticated successfully"}
+            )
         except Exception as e:
-            return jsonify({"status": "error", "message": "Spotify authentication failed", "details": str(e)}), 500
+            return (
+                jsonify(
+                    {
+                        "status": "error",
+                        "message": "Spotify authentication failed",
+                        "details": str(e),
+                    }
+                ),
+                500,
+            )
     else:
         return jsonify({"status": "error", "message": "No code provided"}), 400
 
-@app.route('/auth/youtube')
+
+@app.route("/auth/youtube")
 def auth_youtube():
     """
     Initiate YouTube OAuth flow.
@@ -378,43 +410,58 @@ def auth_youtube():
     flow = Flow.from_client_secrets_file(
         config["YOUTUBE_CLIENT_SECRETS_FILE"],
         scopes=config["YOUTUBE_SCOPES"],
-        redirect_uri="http://localhost:5000/auth/youtube/callback"
+        redirect_uri="http://localhost:5000/auth/youtube/callback",
     )
     auth_url, state = flow.authorization_url(
-        access_type='offline',
-        include_granted_scopes='true'
+        access_type="offline", include_granted_scopes="true"
     )
-    session['youtube_state'] = state
+    session["youtube_state"] = state
     return redirect(auth_url)
 
-@app.route('/auth/youtube/callback')
+
+@app.route("/auth/youtube/callback")
 def callback_youtube():
     """
     Handle YouTube OAuth callback.
     """
-    state = request.args.get('state')
-    if state != session.get('youtube_state'):
-        return jsonify({"status": "error", "message": "State mismatch in YouTube OAuth"}), 400
+    state = request.args.get("state")
+    if state != session.get("youtube_state"):
+        return (
+            jsonify({"status": "error", "message": "State mismatch in YouTube OAuth"}),
+            400,
+        )
 
     flow = Flow.from_client_secrets_file(
         config["YOUTUBE_CLIENT_SECRETS_FILE"],
         scopes=config["YOUTUBE_SCOPES"],
         state=state,
-        redirect_uri="http://localhost:5000/auth/youtube/callback"
+        redirect_uri="http://localhost:5000/auth/youtube/callback",
     )
 
     authorization_response = request.url
     try:
         flow.fetch_token(authorization_response=authorization_response)
     except Exception as e:
-        return jsonify({"status": "error", "message": "YouTube OAuth failed", "details": str(e)}), 500
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": "YouTube OAuth failed",
+                    "details": str(e),
+                }
+            ),
+            500,
+        )
 
     credentials = flow.credentials
-    session['youtube_credentials'] = credentials_to_dict(credentials)
+    session["youtube_credentials"] = credentials_to_dict(credentials)
 
-    return jsonify({"status": "success", "message": "YouTube authenticated successfully"})
+    return jsonify(
+        {"status": "success", "message": "YouTube authenticated successfully"}
+    )
 
-@app.route('/transfer', methods=['POST'])
+
+@app.route("/transfer", methods=["POST"])
 def transfer_playlist():
     """
     Handle the transfer of a Spotify playlist to YouTube.
@@ -430,17 +477,25 @@ def transfer_playlist():
     if not data:
         return jsonify({"status": "error", "message": "No data provided"}), 400
 
-    playlist_id = data.get('playlist_id')
-    youtube_title = data.get('youtube_title')
-    youtube_description = data.get('youtube_description', '')
+    playlist_id = data.get("playlist_id")
+    youtube_title = data.get("youtube_title")
+    youtube_description = data.get("youtube_description", "")
 
     if not playlist_id or not youtube_title:
-        return jsonify({"status": "error", "message": "playlist_id and youtube_title are required"}), 400
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": "playlist_id and youtube_title are required",
+                }
+            ),
+            400,
+        )
 
     # Check if authenticated
-    if 'spotify_token' not in session:
+    if "spotify_token" not in session:
         return jsonify({"status": "error", "message": "Spotify not authenticated"}), 401
-    if 'youtube_credentials' not in session:
+    if "youtube_credentials" not in session:
         return jsonify({"status": "error", "message": "YouTube not authenticated"}), 401
 
     try:
@@ -496,8 +551,8 @@ def transfer_playlist():
                 "total_tracks": len(tracks),
                 "added_videos": added_videos,
                 "not_found": not_found,
-                "errors": errors
-            }
+                "errors": errors,
+            },
         }
 
         return jsonify(result), 200
@@ -505,19 +560,32 @@ def transfer_playlist():
     except LoadError as e:
         return jsonify({"status": "error", "message": str(e)}), 500
     except Exception as e:
-        return jsonify({"status": "error", "message": "An unexpected error occurred.", "details": str(e)}), 500
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": "An unexpected error occurred.",
+                    "details": str(e),
+                }
+            ),
+            500,
+        )
+
 
 # -------------------- Error Handlers --------------------
+
 
 @app.errorhandler(404)
 def not_found(error):
     return jsonify({"status": "error", "message": "Endpoint not found"}), 404
 
+
 @app.errorhandler(500)
 def internal_error(error):
     return jsonify({"status": "error", "message": "Internal server error"}), 500
 
+
 # -------------------- Run the App --------------------
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
