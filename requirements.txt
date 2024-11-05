@@ -1,5 +1,8 @@
+Flask
+Flask-CORS
+Flask-Session
 spotipy
 google-auth
 google-auth-oauthlib
-google-auth-httplib2
 google-api-python-client
+python-dotenv

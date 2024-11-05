@@ -15,3 +15,6 @@ Thumbs.db
 *.log
 logs/
 
+.env
+
+node_modules/
