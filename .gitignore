@@ -1,0 +1,17 @@
+.cache
+client_secrets.json
+
+__pycache__/
+*.py[cod]
+*$py.class
+
+venv/
+env/
+
+.vscode/
+.DS_Store
+Thumbs.db
+
+*.log
+logs/
+
