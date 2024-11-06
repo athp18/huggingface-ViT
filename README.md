@@ -16,5 +16,5 @@ pip install -r requirements.txt
 5. Edit the `config.json` file to contain the ID of the playlist you want to convert to instrumentals.
 6. Run the script with:
 ```
-python instrumental_playlist.py
+python cli.py
 ```
