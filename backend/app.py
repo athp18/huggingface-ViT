@@ -1,7 +1,6 @@
 import os
 import sys
 import json
-from dataclasses import dataclass
 from flask import Flask, redirect, request, session, url_for, jsonify
 from flask_cors import CORS
 from flask_session import Session
@@ -13,19 +12,6 @@ from google.auth.transport.requests import Request
 import google.oauth2.credentials
 
 # -------------------- Configuration Module --------------------
-
-
-@dataclass
-class LoadError(Exception):
-    """Raise an exception where data loading fails"""
-
-    source: str
-    message: str
-    original_error: Exception | None = None
-
-    def __str__(self):
-        return f"Failed to load from {self.source}: {self.message}"
-
 
 def load_json(file_path):
     """
